@@ -1,34 +1,24 @@
 import streamlit as st
+import joblib
+import numpy as np
 
-# ─── Species data ────────────────────────────────────────────────────────
-SPECIES_DATA = {
-    'Iris Setosa': {
-        'emoji': '🌿',
-        'description': 'A compact, hardy species with notably short petals. Native to the Arctic and alpine regions, Setosa is easily distinguished by its small, rounded petals and is the most divergent of the three species.'
-    },
-    'Iris Versicolor': {
-        'emoji': '🪻',
-        'description': 'The Blue Flag Iris, common across North America. Versicolor displays elegant violet-blue petals with intricate veining and thrives in wetland environments. Its measurements fall neatly between Setosa and Virginica.'
-    },
-    'Iris Virginica': {
-        'emoji': '🌸',
-        'description': 'The Southern Blue Flag, the largest of the three species. Virginica bears wide, sweeping petals in deep violet hues, found along the marshy shores of the eastern United States.'
-    }
+# ─── Load the Separated Model ────────────────────────────────────────────
+# This loads the trained brain you created in Colab!
+model = joblib.load('iris_model.pkl')
+
+# ─── Species Data ────────────────────────────────────────────────────────
+# The model outputs numbers (0, 1, 2), so we map them back to names
+SPECIES_MAP = {
+    0: {'name': 'Iris Setosa', 'emoji': '🌿', 'desc': 'A compact, hardy species with notably short petals.'},
+    1: {'name': 'Iris Versicolor', 'emoji': '🪻', 'desc': 'The Blue Flag Iris, common across North America. Measurements fall neatly between Setosa and Virginica.'},
+    2: {'name': 'Iris Virginica', 'emoji': '🌸', 'desc': 'The Southern Blue Flag, the largest of the three species. Bears wide, sweeping petals.'}
 }
-
-# ─── Prediction model ────────────────────────────────────────────────────
-def classify_iris(petal_length, petal_width):
-    if petal_length <= 2.45:
-        return 'Iris Setosa'
-    if petal_width <= 1.75 and petal_length <= 4.95:
-        return 'Iris Versicolor'
-    return 'Iris Virginica'
 
 # ─── Streamlit UI ────────────────────────────────────────────────────────
 st.set_page_config(page_title="Iris Species Predictor", page_icon="🌸")
 
 st.title("🌸 Iris Species Predictor")
-st.write("Enter your measurements below to identify the iris species.")
+st.write("Enter your measurements below to identify the iris species using a trained Machine Learning model.")
 
 col1, col2 = st.columns(2)
 
@@ -41,8 +31,14 @@ with col2:
     petal_width = st.number_input("Petal Width (cm)", min_value=0.0, value=0.2, step=0.1)
 
 if st.button("Identify Species ➔", type="primary"):
-    species_name = classify_iris(petal_length, petal_width)
-    data = SPECIES_DATA[species_name]
+    # Group the user's inputs into the exact format the model expects
+    input_data = np.array([[sepal_length, sepal_width, petal_length, petal_width]])
     
-    st.success(f"### {data['emoji']} {species_name}")
-    st.write(data['description'])
+    # Use the loaded model to calculate the prediction
+    prediction_num = model.predict(input_data)[0]
+    
+    # Get the details for the predicted species
+    result = SPECIES_MAP[prediction_num]
+    
+    st.success(f"### {result['emoji']} {result['name']}")
+    st.write(result['desc'])
